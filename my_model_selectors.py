@@ -104,5 +104,25 @@ class SelectorCV(ModelSelector):
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-        # TODO implement model selection using CV
-        raise NotImplementedError
+        best_score = float('-inf')
+        best_model = self.base_model(self.min_n_components)
+
+        for n in range(self.min_n_components, self.max_n_components + 1):
+            try:
+                model = self.base_model(n)
+                kf = KFold()
+                scores = []
+                for train_index, test_index in kf.split(self.sequences):
+                    X_train, len_train = combine_sequences(train_index, self.sequences)
+                    X_test, len_test = combine_sequences(test_index, self.sequences)
+                    model.fit(X_train, len_train)
+                    scores.append(model.score(X_test, len_test))
+                score = statistics.mean(scores)
+
+                if score > best_score:
+                    best_score = score
+                    best_model = model
+            except:
+                pass
+
+        return best_model
